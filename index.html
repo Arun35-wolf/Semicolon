@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NoteFlow — Collaborative Notes & Habit Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+/* ── Reset & Variables ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #050810;
+  --surface:   #0d1117;
+  --surface2:  #131a24;
+  --surface3:  #1a2332;
+  --border:    rgba(59,130,246,0.15);
+  --border2:   rgba(59,130,246,0.08);
+  --blue:      #3b82f6;
+  --blue-dim:  #1d4ed8;
+  --blue-glow: rgba(59,130,246,0.25);
+  --blue-faint:rgba(59,130,246,0.06);
+  --cyan:      #22d3ee;
+  --text:      #e2e8f0;
+  --text-dim:  #64748b;
+  --text-mute: #334155;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --amber:     #f59e0b;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'DM Mono', monospace;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Splash / Login Screen ─────────────────────────── */
+#splash {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  animation: none;
+}
+#splash.hidden { display: none; }
+
+.splash-card {
+  width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: 0 0 80px rgba(59,130,246,0.12), 0 0 0 1px rgba(59,130,246,0.06);
+  animation: splashIn 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes splashIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.splash-logo {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 32px;
+}
+.splash-logo-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.splash-logo-text {
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 800;
+  background: linear-gradient(90deg, #fff 0%, var(--blue) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.splash-h { font-family: var(--font-display); font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+.splash-sub { color: var(--text-dim); font-size: 14px; margin-bottom: 28px; }
+
+.field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 6px; }
+.field-input {
+  width: 100%; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-family: var(--font-body); font-size: 14px;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+.field-input::placeholder { color: var(--text-mute); }
+
+.btn-primary {
+  width: 100%; margin-top: 20px; padding: 12px;
+  background: var(--blue); border: none; border-radius: var(--radius);
+  color: #fff; font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  letter-spacing: 0.02em;
+}
+.btn-primary:hover { background: #2563eb; box-shadow: 0 0 20px var(--blue-glow); }
+.btn-primary:active { transform: scale(0.98); }
+
+/* ── Top Bar ───────────────────────────────────────── */
+#topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 52px; min-height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  z-index: 10;
+}
+.tb-logo {
+  font-family: var(--font-display); font-size: 18px; font-weight: 800;
+  background: linear-gradient(90deg, #fff, var(--blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-right: 4px;
+}
+.tb-logo span { font-size: 16px; }
+
+#docTitle {
+  flex: 1; max-width: 320px;
+  background: transparent; border: none; outline: none;
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  color: var(--text); padding: 4px 8px; border-radius: 6px;
+  border: 1px solid transparent; transition: border-color 0.2s;
+}
+#docTitle:hover, #docTitle:focus { border-color: var(--border); background: var(--surface2); }
+
+.tb-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+.tb-btn {
+  padding: 6px 12px; border-radius: 7px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  display: flex; align-items: center; gap: 5px;
+}
+.tb-btn:hover { background: var(--blue-faint); border-color: var(--blue); color: var(--text); }
+.tb-btn.active { background: var(--blue-faint); border-color: var(--blue); color: var(--blue); }
+
+.tb-saved { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
+.tb-saved .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+.presence-avatars { display: flex; margin-left: auto; }
+.p-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; margin-left: -6px;
+  border: 2px solid var(--surface); color: #fff;
+  font-family: var(--font-display);
+}
+.user-chip {
+  display: flex; align-items: center; gap: 7px; padding: 4px 10px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 99px;
+  font-size: 12px; color: var(--text-dim); cursor: pointer;
+}
+.user-chip .uc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+
+/* ── Main Layout ───────────────────────────────────── */
+#app {
+  display: flex; flex: 1; overflow: hidden;
+}
+
+/* ── Left Sidebar: Doc List ────────────────────────── */
+#sidebar {
+  width: 220px; min-width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sb-head {
+  padding: 14px 14px 10px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-dim);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sb-add {
+  width: 22px; height: 22px; border-radius: 6px;
+  background: var(--blue-faint); border: 1px solid var(--border);
+  color: var(--blue); font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.sb-add:hover { background: var(--blue); color: #fff; }
+
+#docList { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
+.doc-item {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  transition: all 0.15s; margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.doc-item:hover { background: var(--surface2); border-color: var(--border2); }
+.doc-item.active { background: var(--blue-faint); border-color: var(--border); }
+.doc-item-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-item-time { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.doc-item-del {
+  display: none; margin-left: auto;
+  background: none; border: none; color: var(--text-mute);
+  cursor: pointer; font-size: 13px; padding: 0 2px;
+}
+.doc-item:hover .doc-item-del { display: block; }
+.doc-item-del:hover { color: var(--red); }
+
+/* ── Editor Area ───────────────────────────────────── */
+#editor-pane {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; min-width: 0;
+  position: relative;
+}
+
+/* Format toolbar */
+#format-bar {
+  display: flex; align-items: center; gap: 2px;
+  padding: 6px 16px; border-bottom: 1px solid var(--border2);
+  background: var(--surface2); overflow-x: auto;
+}
+.fmt-btn {
+  padding: 4px 8px; border-radius: 5px; border: none;
+  background: transparent; color: var(--text-dim);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.fmt-btn:hover { background: var(--surface3); color: var(--text); }
+.fmt-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+#editor {
+  flex: 1; padding: 32px 48px; overflow-y: auto;
+  outline: none; font-family: var(--font-mono); font-size: 14.5px;
+  line-height: 1.8; color: var(--text); caret-color: var(--blue);
+  white-space: pre-wrap; word-wrap: break-word;
+  background: var(--bg);
+}
+#editor:empty::before { content: attr(data-placeholder); color: var(--text-mute); pointer-events: none; }
+
+.editor-footer {
+  padding: 6px 48px; border-top: 1px solid var(--border2);
+  background: var(--surface2); display: flex; align-items: center; gap: 12px;
+}
+.ef-stat { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+
+/* ── Right Panel ───────────────────────────────────── */
+#right-panel {
+  width: 300px; min-width: 300px;
+  background: var(--surface);
+  border-left: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.rp-tabs {
+  display: flex; border-bottom: 1px solid var(--border2);
+}
+.rp-tab {
+  flex: 1; padding: 12px 8px; text-align: center;
+  font-size: 12px; font-weight: 600; font-family: var(--font-display);
+  color: var(--text-dim); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  letter-spacing: 0.03em;
+}
+.rp-tab:hover { color: var(--text); }
+.rp-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--blue-faint); }
+
+.rp-panel { flex: 1; overflow-y: auto; display: none; }
+.rp-panel.active { display: block; }
+
+/* Habits */
+.habits-top {
+  padding: 12px 14px; border-bottom: 1px solid var(--border2);
+}
+.btn-add-habit {
+  width: 100%; padding: 9px; border-radius: 8px;
+  background: var(--blue-faint); border: 1px dashed var(--border);
+  color: var(--blue); font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-add-habit:hover { background: var(--blue); color: #fff; border-style: solid; }
+
+.habit-date-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-bottom: 1px solid var(--border2);
+}
+.hdn-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+.hdn-btn:hover { color: var(--text); background: var(--surface2); }
+.hdn-date { font-size: 12px; font-weight: 600; color: var(--text-dim); font-family: var(--font-mono); }
+
+#habitList { padding: 8px; }
+.habit-card {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px; margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.habit-card:hover { border-color: var(--border); }
+.habit-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.habit-emoji { font-size: 20px; line-height: 1; }
+.habit-name { font-size: 13px; font-weight: 600; flex: 1; }
+.habit-streak {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; font-family: var(--font-mono);
+  color: var(--amber); background: rgba(245,158,11,0.1);
+  padding: 2px 6px; border-radius: 99px;
+}
+.habit-check {
+  width: 100%; padding: 7px; border-radius: 7px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  color: var(--text-dim); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; font-family: var(--font-body);
+}
+.habit-check.done { background: rgba(34,197,94,0.12); border-color: var(--green); color: var(--green); }
+.habit-check:hover { border-color: var(--blue); }
+.habit-del-btn {
+  background: none; border: none; color: var(--text-mute); font-size: 12px;
+  cursor: pointer; padding: 2px; line-height: 1;
+}
+.habit-del-btn:hover { color: var(--red); }
+
+.habit-reminder {
+  font-size: 10px; color: var(--text-dim); margin-top: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* Habit progress bar */
+.habit-progress { margin-top: 6px; }
+.hp-bar { height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+.hp-fill { height: 100%; border-radius: 99px; background: var(--blue); transition: width 0.4s ease; }
+.hp-label { font-size: 10px; color: var(--text-dim); margin-top: 3px; font-family: var(--font-mono); }
+
+/* Leaderboard */
+#leaderboardPanel { padding: 8px; }
+.lb-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 6px 12px;
+}
+.lb-title { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+.lb-sub { font-size: 11px; color: var(--text-dim); }
+.lb-refresh { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; }
+.lb-refresh:hover { color: var(--blue); }
+
+.lb-entry {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 10px; border-radius: 9px; margin-bottom: 4px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  transition: border-color 0.2s;
+}
+.lb-entry:hover { border-color: var(--border); }
+.lb-entry.me { border-color: var(--blue); background: var(--blue-faint); }
+.lb-rank {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: var(--text-mute); width: 20px; text-align: center;
+}
+.lb-rank.gold   { color: #fbbf24; }
+.lb-rank.silver { color: #94a3b8; }
+.lb-rank.bronze { color: #b45309; }
+.lb-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-stats { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); margin-top: 1px; }
+.lb-score {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: var(--amber); text-align: right;
+}
+.lb-score span { display: block; font-size: 9px; color: var(--text-dim); font-weight: 400; text-align: center; }
+
+.lb-empty { text-align: center; padding: 32px 16px; color: var(--text-dim); font-size: 13px; }
+
+/* ── Modal ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.2s;
+}
+.modal-overlay.hidden { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: 380px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px 28px 24px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  animation: modalIn 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.modal-title { font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.modal-row { margin-bottom: 14px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.btn-modal {
+  flex: 1; padding: 10px; border-radius: 8px;
+  font-family: var(--font-body); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-modal.cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); }
+.btn-modal.cancel:hover { color: var(--text); border-color: var(--text-mute); }
+.btn-modal.confirm { background: var(--blue); border: none; color: #fff; }
+.btn-modal.confirm:hover { background: #2563eb; }
+
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.emoji-opt {
+  width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface2); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.emoji-opt:hover, .emoji-opt.selected { background: var(--blue-faint); border-color: var(--blue); }
+
+.color-swatches { display: flex; gap: 8px; margin-top: 8px; }
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: transform 0.15s;
+}
+.color-swatch.selected { border-color: #fff; transform: scale(1.15); }
+
+/* ── Toast ─────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 20px; border-radius: 99px;
+  font-size: 13px; font-weight: 500; z-index: 300;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none; opacity: 0; transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+/* ── Connection dot ────────────────────────────────── */
+.conn-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-mute); transition: background 0.3s;
+  flex-shrink: 0;
+}
+.conn-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.conn-dot.connecting { background: var(--amber); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+/* ── Misc ──────────────────────────────────────────── */
+.hidden { display: none !important; }
+select.field-input { cursor: pointer; }
+input[type=time].field-input { cursor: pointer; }
+
+.streak-fire { display: inline; }
+.no-habits {
+  text-align: center; padding: 32px 16px;
+  color: var(--text-dim); font-size: 13px;
+}
+.no-habits .nh-icon { font-size: 36px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ── Splash Screen ───────────────────────────────── -->
+<div id="splash">
+  <div class="splash-card">
+    <div class="splash-logo">
+      <div class="splash-logo-icon">📝</div>
+      <div class="splash-logo-text">NoteFlow</div>
+    </div>
+    <div class="splash-h">Your creative space awaits.</div>
+    <div class="splash-sub">Real-time collaboration + habit tracking in one place.</div>
+    <div class="field-label">Your Display Name</div>
+    <input class="field-input" id="nameInput" type="text" placeholder="e.g. Alex Chen" maxlength="24" />
+    <button class="btn-primary" id="joinBtn">Launch NoteFlow →</button>
+  </div>
+</div>
+
+<!-- ── Top Bar ─────────────────────────────────────── -->
+<div id="topbar" class="hidden">
+  <div class="tb-logo">Note<span>Flow</span></div>
+  <div class="tb-sep"></div>
+  <input id="docTitle" type="text" value="Untitled" placeholder="Doc title…" spellcheck="false" />
+  <div class="tb-saved" id="saveStatus"><div class="dot"></div><span>Saved</span></div>
+  <div class="tb-sep"></div>
+  <div class="conn-dot" id="connDot" title="Connection status"></div>
+  <div id="presenceAvatars" class="presence-avatars"></div>
+  <div class="user-chip" id="userChip" style="margin-left:8px">
+    <div class="uc-dot"></div>
+    <span id="userChipName">–</span>
+  </div>
+</div>
+
+<!-- ── Main App ────────────────────────────────────── -->
+<div id="app" class="hidden">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sb-head">
+      Documents
+      <button class="sb-add" id="newDocBtn" title="New document">+</button>
+    </div>
+    <div id="docList"></div>
+  </div>
+
+  <!-- Editor -->
+  <div id="editor-pane">
+    <div id="format-bar">
+      <button class="fmt-btn" data-cmd="bold"><b>B</b></button>
+      <button class="fmt-btn" data-cmd="italic"><i>I</i></button>
+      <button class="fmt-btn" data-cmd="underline"><u>U</u></button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" data-prefix="# ">H1</button>
+      <button class="fmt-btn" data-prefix="## ">H2</button>
+      <button class="fmt-btn" data-prefix="### ">H3</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" data-prefix="- ">• List</button>
+      <button class="fmt-btn" data-prefix="1. ">1. List</button>
+      <button class="fmt-btn" data-prefix="> ">Quote</button>
+      <button class="fmt-btn" data-prefix="```\n" data-suffix="\n```">Code</button>
+    </div>
+    <div id="editor" contenteditable="true" data-placeholder="Start writing…" spellcheck="false"></div>
+    <div class="editor-footer">
+      <span class="ef-stat" id="wordCount">0 words</span>
+      <span class="ef-stat" id="charCount">0 chars</span>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div id="right-panel">
+    <div class="rp-tabs">
+      <div class="rp-tab active" data-tab="habits">🔥 Habits</div>
+      <div class="rp-tab" data-tab="leaderboard">🏆 Board</div>
+    </div>
+
+    <!-- Habits Panel -->
+    <div class="rp-panel active" id="habitsPanel">
+      <div class="habits-top">
+        <button class="btn-add-habit" id="addHabitBtn">+ New Habit</button>
+      </div>
+      <div class="habit-date-nav">
+        <button class="hdn-btn" id="prevDay">‹</button>
+        <div class="hdn-date" id="habitsDateLabel">Today</div>
+        <button class="hdn-btn" id="nextDay">›</button>
+      </div>
+      <div id="habitList"></div>
+    </div>
+
+    <!-- Leaderboard Panel -->
+    <div class="rp-panel" id="leaderboardPanel">
+      <div class="lb-head">
+        <div>
+          <div class="lb-title">🏆 Leaderboard</div>
+          <div class="lb-sub">Ranked by total streak</div>
+        </div>
+        <button class="lb-refresh" id="refreshLb" title="Refresh">↻</button>
+      </div>
+      <div id="lbList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Add Habit Modal ─────────────────────────────── -->
+<div class="modal-overlay hidden" id="habitModal">
+  <div class="modal">
+    <div class="modal-title">New Habit</div>
+    <div class="modal-row">
+      <div class="field-label">Habit Name</div>
+      <input class="field-input" id="hm-name" type="text" placeholder="e.g. Morning Run" maxlength="40" />
+    </div>
+    <div class="modal-row">
+      <div class="field-label">Pick an Emoji</div>
+      <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+    <div class="modal-row">
+      <div class="field-label">Color</div>
+      <div class="color-swatches" id="colorSwatches"></div>
+    </div>
+    <div class="modal-row">
+      <div class="field-label">Daily Reminder (optional)</div>
+      <input class="field-input" id="hm-reminder" type="time" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal cancel" id="hm-cancel">Cancel</button>
+      <button class="btn-modal confirm" id="hm-confirm">Add Habit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ───────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────
+const API = 'http://localhost:3001/api';
+const WS_URL = 'ws://localhost:3001';
+
+// ── State ─────────────────────────────────────────────
+const state = {
+  user: null,
+  docs: [],
+  currentDocId: null,
+  habits: [],
+  habitDate: new Date(),
+  ws: null,
+  saveTimer: null,
+  isSyncing: false,
+  selectedEmoji: '✅',
+  selectedColor: '#3b82f6',
+};
+
+// ── Emoji / Color options ──────────────────────────────
+const EMOJIS = ['✅','🏃','💪','📚','🧘','💧','🍎','😴','✍️','🎯','🎸','🌿','☀️','🧠','❤️','🛁'];
+const COLORS = ['#3b82f6','#22d3ee','#22c55e','#f59e0b','#ef4444','#8b5cf6','#ec4899','#f97316'];
+
+// ── Helpers ───────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const show = el => el.classList.remove('hidden');
+const hide = el => el.classList.add('hidden');
+
+function toast(msg, dur = 2800) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function dateStr(d) { return d.toISOString().slice(0, 10); }
+function isToday(d) { return dateStr(d) === dateStr(new Date()); }
+
+function relTime(iso) {
+  const diff = Date.now() - new Date(iso);
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+// ── API calls ──────────────────────────────────────────
+async function apiPost(path, body) {
+  const r = await fetch(API + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  return r.json();
+}
+async function apiGet(path) { const r = await fetch(API + path); return r.json(); }
+async function apiDel(path) { const r = await fetch(API + path, { method:'DELETE' }); return r.json(); }
+
+// ── WebSocket ──────────────────────────────────────────
+function connectWS() {
+  const dot = $('connDot'); dot.className = 'conn-dot connecting';
+  state.ws = new WebSocket(WS_URL);
+  state.ws.onopen = () => {
+    dot.className = 'conn-dot connected';
+    if (state.currentDocId) joinDoc(state.currentDocId);
+  };
+  state.ws.onclose = () => {
+    dot.className = 'conn-dot';
+    setTimeout(connectWS, 3000);
+  };
+  state.ws.onerror = () => { dot.className = 'conn-dot'; };
+  state.ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    handleWSMessage(msg);
+  };
+}
+
+function wsSend(obj) {
+  if (state.ws?.readyState === 1) state.ws.send(JSON.stringify(obj));
+}
+
+function joinDoc(docId) {
+  wsSend({ type:'JOIN', userId: state.user.id, docId });
+}
+
+function handleWSMessage(msg) {
+  switch(msg.type) {
+    case 'DOC_STATE': {
+      $('docTitle').value = msg.doc.title;
+      setEditorContent(msg.doc.content);
+      updateStats();
+      break;
+    }
+    case 'DOC_UPDATE': {
+      if (msg.from !== state.user.id) {
+        // Preserve cursor
+        const sel = window.getSelection();
+        const anchorNode = sel?.anchorNode;
+        const anchorOffset = sel?.anchorOffset;
+        setEditorContent(msg.content);
+        if (msg.title) $('docTitle').value = msg.title;
+        updateStats();
+      }
+      break;
+    }
+    case 'PRESENCE': {
+      renderPresence(msg.users);
+      break;
+    }
+    case 'DOC_LIST_UPDATED': {
+      state.docs = msg.docs;
+      renderDocList();
+      break;
+    }
+    case 'LEADERBOARD_UPDATED': {
+      renderLeaderboard(msg.leaderboard);
+      break;
+    }
+  }
+}
+
+// ── Login / Join ───────────────────────────────────────
+$('nameInput').addEventListener('keydown', e => { if(e.key==='Enter') $('joinBtn').click(); });
+$('joinBtn').addEventListener('click', async () => {
+  const name = $('nameInput').value.trim();
+  if (!name) { toast('Please enter your name 😅'); return; }
+  $('joinBtn').textContent = 'Launching…'; $('joinBtn').disabled = true;
+  try {
+    const user = await apiPost('/users', { name });
+    state.user = user;
+    localStorage.setItem('nf_userId', user.id);
+    localStorage.setItem('nf_userName', user.name);
+    launchApp();
+  } catch {
+    toast('Cannot reach server. Make sure backend is running on :3001');
+    $('joinBtn').textContent = 'Launch NoteFlow →'; $('joinBtn').disabled = false;
+  }
+});
+
+async function launchApp() {
+  hide($('splash')); show($('topbar')); show($('app'));
+  $('userChipName').textContent = state.user.name;
+
+  // Load docs
+  state.docs = await apiGet('/docs');
+  renderDocList();
+
+  // Load habits
+  state.habits = await apiGet(`/habits/${state.user.id}`);
+  renderHabits();
+
+  // Open first doc
+  if (state.docs.length > 0) {
+    openDoc(state.docs[0].id);
+  }
+
+  connectWS();
+  loadLeaderboard();
+}
+
+// ── Document Management ────────────────────────────────
+function renderDocList() {
+  const list = $('docList'); list.innerHTML = '';
+  state.docs.forEach(doc => {
+    const el = document.createElement('div');
+    el.className = 'doc-item' + (doc.id === state.currentDocId ? ' active' : '');
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:4px">
+      <div class="doc-item-title">📄 ${escHtml(doc.title)}</div>
+      <button class="doc-item-del" data-id="${doc.id}" title="Delete">✕</button>
+    </div>
+    <div class="doc-item-time">${relTime(doc.updatedAt)}</div>`;
+    el.querySelector('.doc-item-title').addEventListener('click', () => openDoc(doc.id));
+    el.querySelector('.doc-item-del').addEventListener('click', e => { e.stopPropagation(); deleteDoc(doc.id); });
+    list.appendChild(el);
+  });
+}
+
+async function openDoc(docId) {
+  state.currentDocId = docId;
+  renderDocList();
+  const doc = await apiGet(`/docs/${docId}`);
+  $('docTitle').value = doc.title;
+  setEditorContent(doc.content);
+  updateStats();
+  joinDoc(docId);
+}
+
+async function createDoc() {
+  const doc = await apiPost('/docs', { title: 'Untitled' });
+  state.docs.unshift(doc);
+  renderDocList();
+  openDoc(doc.id);
+  toast('New doc created 📄');
+  setTimeout(() => { $('docTitle').select(); }, 100);
+}
+
+async function deleteDoc(docId) {
+  if (!confirm('Delete this document?')) return;
+  await apiDel(`/docs/${docId}`);
+  state.docs = state.docs.filter(d => d.id !== docId);
+  renderDocList();
+  if (state.currentDocId === docId) {
+    if (state.docs.length > 0) openDoc(state.docs[0].id);
+    else { setEditorContent(''); $('docTitle').value = ''; }
+  }
+  toast('Document deleted');
+}
+
+$('newDocBtn').addEventListener('click', createDoc);
+
+// Title change
+$('docTitle').addEventListener('input', () => {
+  scheduleSave();
+});
+
+// ── Editor ─────────────────────────────────────────────
+const editor = $('editor');
+
+function setEditorContent(text) {
+  editor.textContent = text;
+}
+
+function getEditorContent() {
+  return editor.textContent;
+}
+
+editor.addEventListener('input', () => {
+  updateStats();
+  scheduleSave();
+  // Broadcast
+  wsSend({ type:'DOC_UPDATE', docId: state.currentDocId, content: getEditorContent(), title: $('docTitle').value });
+});
+
+function updateStats() {
+  const text = getEditorContent();
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  $('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+  $('charCount').textContent = `${text.length} chars`;
+}
+
+function scheduleSave() {
+  $('saveStatus').innerHTML = '<div class="dot" style="background:var(--amber)"></div><span>Saving…</span>';
+  clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(saveDoc, 1200);
+}
+
+async function saveDoc() {
+  if (!state.currentDocId) return;
+  try {
+    // No explicit save needed — WS handles sync, but we keep local state fresh
+    const idx = state.docs.findIndex(d => d.id === state.currentDocId);
+    if (idx >= 0) { state.docs[idx].title = $('docTitle').value; renderDocList(); }
+    $('saveStatus').innerHTML = '<div class="dot"></div><span>Saved</span>';
+  } catch { $('saveStatus').innerHTML = '<div class="dot" style="background:var(--red)"></div><span>Error</span>'; }
+}
+
+// Format bar
+document.querySelectorAll('.fmt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cmd = btn.dataset.cmd;
+    const prefix = btn.dataset.prefix;
+    const suffix = btn.dataset.suffix || '';
+    editor.focus();
+    if (cmd) {
+      document.execCommand(cmd);
+    } else if (prefix) {
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        const text = prefix + (sel.toString() || '') + suffix;
+        const node = document.createTextNode(text);
+        range.deleteContents();
+        range.insertNode(node);
+        range.setStartAfter(node); range.collapse(true);
+        sel.removeAllRanges(); sel.addRange(range);
+      }
+      updateStats(); scheduleSave();
+      wsSend({ type:'DOC_UPDATE', docId: state.currentDocId, content: getEditorContent() });
+    }
+  });
+});
+
+// ── Presence ───────────────────────────────────────────
+function renderPresence(users) {
+  const el = $('presenceAvatars'); el.innerHTML = '';
+  users.filter(u => u.id !== state.user?.id).slice(0, 5).forEach(u => {
+    const av = document.createElement('div');
+    av.className = 'p-avatar';
+    av.style.background = u.color || '#3b82f6';
+    av.title = u.name;
+    av.textContent = u.avatar || u.name.slice(0,2).toUpperCase();
+    el.appendChild(av);
+  });
+}
+
+// ── Habits ─────────────────────────────────────────────
+function renderHabits() {
+  const list = $('habitList');
+  const ds = dateStr(state.habitDate);
+  const label = isToday(state.habitDate) ? 'Today' : formatDate(state.habitDate);
+  $('habitsDateLabel').textContent = label;
+
+  list.innerHTML = '';
+  if (state.habits.length === 0) {
+    list.innerHTML = `<div class="no-habits"><div class="nh-icon">🌱</div>No habits yet.<br>Add one to start your streak!</div>`;
+    return;
+  }
+
+  state.habits.forEach(h => {
+    const done = (h.completions || []).includes(ds);
+    const streak = h.streak || 0;
+    const total = (h.completions || []).length;
+    // 7-day rate
+    const week = calcWeekRate(h.completions || []);
+
+    const card = document.createElement('div');
+    card.className = 'habit-card';
+    card.innerHTML = `
+      <div class="habit-top">
+        <div class="habit-emoji">${h.emoji}</div>
+        <div class="habit-name">${escHtml(h.name)}</div>
+        ${streak > 0 ? `<div class="habit-streak">🔥 ${streak}</div>` : ''}
+        <button class="habit-del-btn" data-id="${h.id}" title="Remove">✕</button>
+      </div>
+      ${h.reminder ? `<div class="habit-reminder">⏰ ${h.reminder}</div>` : ''}
+      <button class="habit-check ${done ? 'done' : ''}" data-id="${h.id}" data-date="${ds}">
+        ${done ? '✓ Done today!' : 'Mark complete'}
+      </button>
+      <div class="habit-progress">
+        <div class="hp-bar"><div class="hp-fill" style="width:${week}%;background:${h.color || '#3b82f6'}"></div></div>
+        <div class="hp-label">${week}% this week · ${total} total</div>
+      </div>
+    `;
+    card.querySelector('.habit-check').addEventListener('click', () => toggleHabit(h.id, ds));
+    card.querySelector('.habit-del-btn').addEventListener('click', () => deleteHabit(h.id));
+    list.appendChild(card);
+  });
+}
+
+function calcWeekRate(completions) {
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    if (completions.includes(dateStr(d))) count++;
+  }
+  return Math.round((count / 7) * 100);
+}
+
+async function toggleHabit(habitId, ds) {
+  const h = await apiPost(`/habits/${state.user.id}/${habitId}/toggle`, { date: ds });
+  const idx = state.habits.findIndex(x => x.id === habitId);
+  if (idx >= 0) state.habits[idx] = h;
+  renderHabits();
+  const done = (h.completions || []).includes(ds);
+  if (done) toast(`${h.emoji} Habit logged! ${h.streak > 0 ? `🔥 ${h.streak} day streak!` : ''}`);
+}
+
+async function deleteHabit(habitId) {
+  await apiDel(`/habits/${state.user.id}/${habitId}`);
+  state.habits = state.habits.filter(h => h.id !== habitId);
+  renderHabits();
+  toast('Habit removed');
+}
+
+// Date nav
+$('prevDay').addEventListener('click', () => {
+  state.habitDate.setDate(state.habitDate.getDate() - 1);
+  renderHabits();
+});
+$('nextDay').addEventListener('click', () => {
+  if (isToday(state.habitDate)) return;
+  state.habitDate.setDate(state.habitDate.getDate() + 1);
+  renderHabits();
+});
+
+// ── Add Habit Modal ────────────────────────────────────
+function openHabitModal() {
+  // Render emojis
+  const grid = $('emojiGrid'); grid.innerHTML = '';
+  EMOJIS.forEach(em => {
+    const btn = document.createElement('button'); btn.className = 'emoji-opt'; btn.textContent = em;
+    if (em === state.selectedEmoji) btn.classList.add('selected');
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected'); state.selectedEmoji = em;
+    });
+    grid.appendChild(btn);
+  });
+  // Render colors
+  const sw = $('colorSwatches'); sw.innerHTML = '';
+  COLORS.forEach(c => {
+    const btn = document.createElement('div');
+    btn.className = 'color-swatch' + (c === state.selectedColor ? ' selected' : '');
+    btn.style.background = c;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected'); state.selectedColor = c;
+    });
+    sw.appendChild(btn);
+  });
+  $('hm-name').value = ''; $('hm-reminder').value = '';
+  show($('habitModal'));
+  setTimeout(() => $('hm-name').focus(), 100);
+}
+
+$('addHabitBtn').addEventListener('click', openHabitModal);
+$('hm-cancel').addEventListener('click', () => hide($('habitModal')));
+$('habitModal').addEventListener('click', e => { if(e.target === $('habitModal')) hide($('habitModal')); });
+
+$('hm-name').addEventListener('keydown', e => { if(e.key==='Enter') $('hm-confirm').click(); });
+
+$('hm-confirm').addEventListener('click', async () => {
+  const name = $('hm-name').value.trim();
+  if (!name) { toast('Please enter a habit name'); return; }
+  const habit = await apiPost(`/habits/${state.user.id}`, {
+    name, emoji: state.selectedEmoji, color: state.selectedColor,
+    reminder: $('hm-reminder').value || null,
+  });
+  state.habits.push(habit);
+  renderHabits();
+  hide($('habitModal'));
+  toast(`${habit.emoji} "${habit.name}" added!`);
+
+  // Schedule browser notification if reminder set
+  if (habit.reminder && 'Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') scheduleReminder(habit);
+    });
+  }
+});
+
+function scheduleReminder(habit) {
+  const [hh, mm] = habit.reminder.split(':').map(Number);
+  const now = new Date();
+  const next = new Date(now); next.setHours(hh, mm, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const delay = next - now;
+  setTimeout(() => {
+    new Notification(`NoteFlow — ${habit.emoji} ${habit.name}`, { body: "Don't break your streak! 🔥", icon: '' });
+  }, delay);
+}
+
+// ── Leaderboard ────────────────────────────────────────
+async function loadLeaderboard() {
+  const lb = await apiGet('/leaderboard');
+  renderLeaderboard(lb);
+}
+
+function renderLeaderboard(lb) {
+  const el = $('lbList'); el.innerHTML = '';
+  if (!lb || lb.length === 0) {
+    el.innerHTML = `<div class="lb-empty">🏆 No players yet.<br>Complete habits to appear here!</div>`;
+    return;
+  }
+  const rankClass = ['gold','silver','bronze'];
+  lb.forEach((entry, i) => {
+    const isMe = entry.userId === state.user?.id;
+    const div = document.createElement('div');
+    div.className = 'lb-entry' + (isMe ? ' me' : '');
+    div.innerHTML = `
+      <div class="lb-rank ${rankClass[i] || ''}">${i < 3 ? ['🥇','🥈','🥉'][i] : i+1}</div>
+      <div class="lb-avatar" style="background:${entry.color || '#3b82f6'}">${entry.avatar}</div>
+      <div class="lb-info">
+        <div class="lb-name">${escHtml(entry.name)}${isMe ? ' <span style="color:var(--blue);font-size:10px">(you)</span>' : ''}</div>
+        <div class="lb-stats">${entry.habitCount} habit${entry.habitCount !== 1 ? 's' : ''} · ${entry.weekScore} this week</div>
+      </div>
+      <div class="lb-score">${entry.totalStreak}<span>streak</span></div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+$('refreshLb').addEventListener('click', loadLeaderboard);
+
+// ── Tab switching ──────────────────────────────────────
+document.querySelectorAll('.rp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.rp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.rp-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $(`${tab.dataset.tab}Panel`).classList.add('active');
+    if (tab.dataset.tab === 'leaderboard') loadLeaderboard();
+  });
+});
+
+// ── Util ───────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Auto-reconnect on localStorage ────────────────────
+window.addEventListener('load', async () => {
+  const savedId = localStorage.getItem('nf_userId');
+  if (savedId) {
+    try {
+      const user = await apiGet(`/users/${savedId}`);
+      if (user && !user.error) {
+        state.user = user;
+        launchApp();
+        return;
+      }
+    } catch {}
+  }
+  // Show splash
+  $('nameInput').focus();
+});
+</script>
+</body>
+</html>
